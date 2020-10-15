@@ -23,14 +23,14 @@ int main (int argc, char * argv[]) {
   std::copy(argv, argv+argc, std::begin(args));
 
   bool help = false;
-  int switch = 0;
+  int index = 0;
 
   fetch_arg(args, "-h", help);
 
   // you can use multiple identifiers for the same option
   // and the return value to check if the argument was found and read
-  bool found = fetch_arg(args, "-s",       switch) or
-               fetch_arg(args, "--switch", switch);
+  bool found = fetch_arg(args, "-i",      index) or
+               fetch_arg(args, "--index", index);
 }
 ```
 
