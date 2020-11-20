@@ -53,7 +53,7 @@ bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T 
       else if constexpr (std::is_same<T, double>     ::value) var = stod (*(result+1));
       else if constexpr (std::is_same<T, std::string>::value) var =       *(result+1);
       else if constexpr (std::is_same<T, bool>       ::value) var = true;
-      else { std::cerr << "Variable type not implemented : " << typeid(T).name() << "\n"; exit(EXIT_FAILURE); }
+      else { std::cerr << "Variable type not implemented : " << typeid(var).name() << "\n"; exit(EXIT_FAILURE); }
       return true;
     }
     else if constexpr (std::is_same<T, bool>::value) var = true;
@@ -74,7 +74,7 @@ bool fetch_arg(const std::vector<std::string> & args, std::string identifier, st
         else if constexpr (std::is_same<T, float>      ::value) v = stof (*(result+1+i++));
         else if constexpr (std::is_same<T, double>     ::value) v = stod (*(result+1+i++));
         else if constexpr (std::is_same<T, std::string>::value) v =       *(result+1+i++);
-        else { std::cerr << "Variable type not implemented : " << typeid(T).name() << "\n"; exit(EXIT_FAILURE); }
+        else { std::cerr << "Variable type not implemented : " << typeid(v).name() << "\n"; exit(EXIT_FAILURE); }
       }
       return true;
     }
