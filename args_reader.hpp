@@ -41,13 +41,18 @@
 
 #include <iostream>
 #include <algorithm>
+#include <limits>
 
 template<typename T>
 bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T & var) {
   auto result = find(args.begin(), args.end(), identifier);
   if (result != args.end()) {
     if (result != args.end()-1) {
-           if constexpr (std::is_same<T, int>        ::value) var = stoi (*(result+1));
+           if constexpr (std::is_same<T, int16_t>    ::value) var = stoi (*(result+1));  // numeric_limits
+      else if constexpr (std::is_same<T, int32_t>    ::value) var = stoi (*(result+1));
+      else if constexpr (std::is_same<T, int64_t>    ::value) var = stol (*(result+1));
+      else if constexpr (std::is_same<T, uint16_t>   ::value) var = stoul(*(result+1)); // numeric_limits
+      else if constexpr (std::is_same<T, uint32_t>   ::value) var = stoul(*(result+1)); // numeric_limits
       else if constexpr (std::is_same<T, uint64_t>   ::value) var = stoul(*(result+1));
       else if constexpr (std::is_same<T, float>      ::value) var = stof (*(result+1));
       else if constexpr (std::is_same<T, double>     ::value) var = stod (*(result+1));
@@ -69,7 +74,11 @@ bool fetch_arg(const std::vector<std::string> & args, std::string identifier, st
     if ( (args.end()-result) > var.size() ) {
       int i = 0;
       for (auto & v : var) {
-             if constexpr (std::is_same<T, int>        ::value) v = stoi (*(result+1+i++));
+             if constexpr (std::is_same<T, int16_t>    ::value) v = stoi (*(result+1+i++)); // numeric_limits
+        else if constexpr (std::is_same<T, int32_t>    ::value) v = stoi (*(result+1+i++));
+        else if constexpr (std::is_same<T, int64_t>    ::value) v = stol (*(result+1+i++));
+        else if constexpr (std::is_same<T, uint16_t>   ::value) v = stoul(*(result+1+i++)); // numeric_limits
+        else if constexpr (std::is_same<T, uint32_t>   ::value) v = stoul(*(result+1+i++)); // numeric_limits
         else if constexpr (std::is_same<T, uint64_t>   ::value) v = stoul(*(result+1+i++));
         else if constexpr (std::is_same<T, float>      ::value) v = stof (*(result+1+i++));
         else if constexpr (std::is_same<T, double>     ::value) v = stod (*(result+1+i++));
