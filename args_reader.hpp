@@ -28,6 +28,9 @@
 // Author  : Katharina von Sturm
 // Date    : 29.09.2020
 // Usage   : fetch_arg(<arguments>, <identifier>, <var>...)
+//           fetch_arg(<arguments>, <identifier>, std::vector<T> <var>)
+//           fetch_arg(<argc>, <argv>, <identifier>, <var>...)
+//           fetch_arg(<argc>, <argv>, <identifier>, std::vector<T> <var>)
 //
 //    <arguments>  : std::vector<std::string>
 //    <identifier> : std::string - expected to start with '-' in case of
