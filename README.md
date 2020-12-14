@@ -50,8 +50,10 @@ int main (int argc, char * argv[]) {
   fetch_arg(argc, argv, "-d", s);
 }
 ```
+## Examples
 
-See also the example program. Compile it using
+See also the example program. `./example -h` prints usage message.  
+Compile it with
 
 ```
 g++ -std=c++17 example.cpp -o example
