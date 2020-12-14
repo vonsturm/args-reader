@@ -27,42 +27,80 @@
 //
 // Author  : Katharina von Sturm
 // Date    : 29.09.2020
+// Usage   : fetch_arg(<arguments>, <identifier>, <var>...)
 //
-// Usage   : fetch_arg(<arguments>, <identifier>, <var>)
-//    searches <arguments> for <identifier> and reads the next element into <var>
-//    if <var> is a vector the number of elements read is equal to the vector size
-//    in this case only same_type arguments can be stored into the vector
+//    <arguments>  : std::vector<std::string>
+//    <identifier> : std::string - expected to start with '-' in case of
+//                   zero size vector or single boolean <var> and no option
+//    <var>        : std::vector<T> or arbitrary number of variables of
+//                   arbitrary type
 //
-// Exception : if <var> is of bool type and <identifier> is found <var> is set to true
+//    Searches <arguments> for <identifier> and reads the next
+//    element(s) into arbitrary number of <var> of arbitrary type. If
+//    <var> is a vector the number of elements read is equal to the
+//    vector size. If the vector size is zero all elements after
+//    <identifier> until next <identifier> are read into the vector. In
+//    the vector case only same_type arguments can be stored. Single
+//    boolean type variables are set to true in case no option is
+//    provided after <identifier>.
 //
-// Return value : returns `true` if <identifier> was found, `false` otherwise
+//    returns `true` if <identifier> was found, `false` otherwise
 //
 // ============================================================================
 
 #include <iostream>
 #include <algorithm>
 #include <limits>
+#include <vector>
+#include <stdexcept>
+
+// global variables
+std::vector<std::string> vpar(0); uint16_t vit = 0;
 
 template<typename T>
-bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T & var) {
+void check_convert_and_assign(T & vv) {
+
+  auto exit_on_conversion_error = [] (std::string s) {
+    std::cerr << "\33[1;31m[ ARGS-READER::CONVERSION_ERROR ]\33[m expected: " << s << "; found : " << vpar[vit] << "\n";
+    exit(EXIT_FAILURE);
+  };
+  auto exit_on_number_error = [] (size_t s) {
+    std::cerr << "\33[1;31m[ ARGS-READER::NUMBER_ERROR ]\33[m insufficient given:" << s << "\n";
+    exit(EXIT_FAILURE);
+  };
+
+  if (vpar.size() > vit) {
+         if constexpr (std::is_same<T, bool>       ::value) vv = vpar[vit] == "true" or (vpar[vit])[0] == '-' ? true : false;
+    else if ((vpar[vit])[0] == '-') exit_on_number_error(vpar.size());
+    else if constexpr (std::is_same<T, int16_t>    ::value) { try { vv = stoi (vpar[vit]); } catch(...) { exit_on_conversion_error("int16_t") ; } }
+    else if constexpr (std::is_same<T, int32_t>    ::value) { try { vv = stoi (vpar[vit]); } catch(...) { exit_on_conversion_error("int32_t") ; } }
+    else if constexpr (std::is_same<T, int64_t>    ::value) { try { vv = stol (vpar[vit]); } catch(...) { exit_on_conversion_error("int64_t") ; } }
+    else if constexpr (std::is_same<T, uint16_t>   ::value) { try { vv = stoul(vpar[vit]); } catch(...) { exit_on_conversion_error("uint16_t"); } }
+    else if constexpr (std::is_same<T, uint32_t>   ::value) { try { vv = stoul(vpar[vit]); } catch(...) { exit_on_conversion_error("uint32_t"); } }
+    else if constexpr (std::is_same<T, uint64_t>   ::value) { try { vv = stoul(vpar[vit]); } catch(...) { exit_on_conversion_error("uint64_t"); } }
+    else if constexpr (std::is_same<T, float>      ::value) { try { vv = stof (vpar[vit]); } catch(...) { exit_on_conversion_error("float")   ; } }
+    else if constexpr (std::is_same<T, double>     ::value) { try { vv = stod (vpar[vit]); } catch(...) { exit_on_conversion_error("double")  ; } }
+    else if constexpr (std::is_same<T, std::string>::value) { try { vv = vpar[vit];        } catch(...) { exit_on_conversion_error("string")  ; } }
+    else if constexpr (std::is_same<T, bool>       ::value) { try { vv = vpar[vit] == "true" or (vpar[vit])[0] == '-' ? true : false; }
+                                                                                             catch(...) { exit_on_conversion_error("bool or void"); } }
+    else exit_on_number_error(vpar.size());
+  }
+  else if constexpr (std::is_same<T, bool>::value) vv = "true";
+  else exit_on_number_error(vpar.size());
+  vit++;
+}
+
+template<typename... T>
+bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T&... var) {
   auto result = find(args.begin(), args.end(), identifier);
-  if (result != args.end()) {
-    if (result != args.end()-1) {
-           if constexpr (std::is_same<T, int16_t>    ::value) var = stoi (*(result+1));  // numeric_limits
-      else if constexpr (std::is_same<T, int32_t>    ::value) var = stoi (*(result+1));
-      else if constexpr (std::is_same<T, int64_t>    ::value) var = stol (*(result+1));
-      else if constexpr (std::is_same<T, uint16_t>   ::value) var = stoul(*(result+1)); // numeric_limits
-      else if constexpr (std::is_same<T, uint32_t>   ::value) var = stoul(*(result+1)); // numeric_limits
-      else if constexpr (std::is_same<T, uint64_t>   ::value) var = stoul(*(result+1));
-      else if constexpr (std::is_same<T, float>      ::value) var = stof (*(result+1));
-      else if constexpr (std::is_same<T, double>     ::value) var = stod (*(result+1));
-      else if constexpr (std::is_same<T, std::string>::value) var =       *(result+1);
-      else if constexpr (std::is_same<T, bool>       ::value) var = true;
-      else { std::cerr << "Variable type not implemented : " << typeid(var).name() << "\n"; exit(EXIT_FAILURE); }
-      return true;
+
+  if (result != args.end()) { // argument not found
+    vpar.resize(0); vit = 0;
+    if (abs(args.end()-result) > sizeof...(var)) { // only copy necessary stuff and only if there is stuff to copy
+      std::copy(result + 1, result + sizeof...(var) + 1, std::back_inserter(vpar));
     }
-    else if constexpr (std::is_same<T, bool>::value) var = true;
-    else { std::cerr << "No argument given for last identifier : " << identifier << "\n"; exit(EXIT_FAILURE); }
+    (check_convert_and_assign(var),...);
+    return true;
   }
   return false;
 }
@@ -70,24 +108,34 @@ bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T 
 template<typename T>
 bool fetch_arg(const std::vector<std::string> & args, std::string identifier, std::vector<T> & var) {
   auto result = find(args.begin(), args.end(), identifier);
+  
   if (result != args.end()) {
-    if ( (args.end()-result) > var.size() ) {
-      int i = 0;
-      for (auto & v : var) {
-             if constexpr (std::is_same<T, int16_t>    ::value) v = stoi (*(result+1+i++)); // numeric_limits
-        else if constexpr (std::is_same<T, int32_t>    ::value) v = stoi (*(result+1+i++));
-        else if constexpr (std::is_same<T, int64_t>    ::value) v = stol (*(result+1+i++));
-        else if constexpr (std::is_same<T, uint16_t>   ::value) v = stoul(*(result+1+i++)); // numeric_limits
-        else if constexpr (std::is_same<T, uint32_t>   ::value) v = stoul(*(result+1+i++)); // numeric_limits
-        else if constexpr (std::is_same<T, uint64_t>   ::value) v = stoul(*(result+1+i++));
-        else if constexpr (std::is_same<T, float>      ::value) v = stof (*(result+1+i++));
-        else if constexpr (std::is_same<T, double>     ::value) v = stod (*(result+1+i++));
-        else if constexpr (std::is_same<T, std::string>::value) v =       *(result+1+i++);
-        else { std::cerr << "Variable type not implemented : " << typeid(v).name() << "\n"; exit(EXIT_FAILURE); }
-      }
-      return true;
+    vpar.resize(0); vit = 0;
+    if (var.size() == 0) {
+      auto result1 = std::find_if(result + 1, args.end(), [](const std::string &s) { return s[0] == '-'; });
+      var.resize(result1-result-1);
     }
-    else { std::cerr << "Not enough arguments given for last identifier : " << identifier << "\n"; exit(EXIT_FAILURE); }
+    if (abs(args.end()-result) > var.size()) {
+      std::copy(result + 1, result + var.size() + 1, std::back_inserter(vpar));
+    }
+    for (auto & v : var) check_convert_and_assign(v);
+    return true;
   }
   return false;
+}
+
+template<typename... T>
+bool fetch_arg(int const argc, char * const argv[], std::string identifier, T&... var) {
+  std::vector<std::string> args(argc);
+  std::copy(argv, argv+argc, args.begin());
+
+  return fetch_arg(args, identifier, var...);
+}
+
+template<typename T>
+bool fetch_arg(int const argc, char * const argv[], std::string identifier, std::vector<T> & var) {
+  std::vector<std::string> args(argc);
+  std::copy(argv, argv+argc, args.begin());
+
+  return fetch_arg(args, identifier, var);
 }
