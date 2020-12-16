@@ -60,6 +60,9 @@
 // global variables
 std::vector<std::string> vpar(0); uint16_t vit = 0;
 
+template <class T>
+void ignore_unused(T&) {} 
+
 template<typename T>
 void check_convert_and_assign(T & vv) {
 
@@ -71,6 +74,8 @@ void check_convert_and_assign(T & vv) {
     std::cerr << "\33[1;31m[ ARGS-READER::NUMBER_ERROR ]\33[m insufficient given:" << s << "\n";
     exit(EXIT_FAILURE);
   };
+  ignore_unused(exit_on_conversion_error);
+  ignore_unused(exit_on_number_error);
 
   if (vpar.size() > vit) {
          if constexpr (std::is_same<T, bool>       ::value) vv = vpar[vit] == "true" or (vpar[vit])[0] == '-' ? true : false;
@@ -99,7 +104,7 @@ bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T&
 
   if (result != args.end()) { // argument not found
     vpar.resize(0); vit = 0;
-    if (abs(args.end()-result) > sizeof...(var)) { // only copy necessary stuff and only if there is stuff to copy
+    if ((uint64_t)abs(args.end()-result) > sizeof...(var)) { // only copy necessary stuff and only if there is stuff to copy
       std::copy(result + 1, result + sizeof...(var) + 1, std::back_inserter(vpar));
     }
     (check_convert_and_assign(var),...);
@@ -118,7 +123,7 @@ bool fetch_arg(const std::vector<std::string> & args, std::string identifier, st
       auto result1 = std::find_if(result + 1, args.end(), [](const std::string &s) { return s[0] == '-'; });
       var.resize(result1-result-1);
     }
-    if (abs(args.end()-result) > var.size()) {
+    if ((uint64_t)abs(args.end()-result) > var.size()) {
       std::copy(result + 1, result + var.size() + 1, std::back_inserter(vpar));
     }
     for (auto & v : var) check_convert_and_assign(v);
