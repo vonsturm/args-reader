@@ -23,7 +23,7 @@
 // ============================================================================
 //    ___   ___   __    __      ___   ____   ___   ___   ____  ___
 //   / /_\ | |_) / /`_ ( (` __ | |_) | |_   / /_\ | | \ | |_  | |_)
-//  /_/   \|_| \ \_\_/ _)_)    |_| \ |_|__ /_/   \|_|_/ |_|__ |_| \
+//  /_/  \ |_| | \_\_/ _)_)    |_| | |_|__ /_/  \ |_|_/ |_|__ |_| |
 //
 // Author  : Katharina von Sturm
 // Date    : 29.09.2020
@@ -52,10 +52,7 @@
 // ============================================================================
 
 #include <iostream>
-#include <algorithm>
-#include <limits>
-#include <vector>
-#include <stdexcept>
+#include <boost/lexical_cast.hpp>
 
 // global variables
 std::vector<std::string> vpar(0); uint16_t vit = 0;
@@ -65,36 +62,35 @@ void ignore_unused(T&) {}
 
 template<typename T>
 void check_convert_and_assign(T & vv) {
+  
+  std::string alert = "\e[1;31m";
+  std::string info  = "\e[38;5;208m";
+  std::string esc   = "\e[0m";
 
-  auto exit_on_conversion_error = [] (std::string s) {
-    std::cerr << "\33[1;31m[ ARGS-READER::CONVERSION_ERROR ]\33[m expected: " << s << "; found : " << vpar[vit] << "\n";
+  auto exit_on_conversion_error = [ca=alert,ci=info,esc] (std::string s) {
+    std::cerr << ca << "[ ARGS-READER::CONVERSION_ERROR ] " << esc << ci << "expected: " << esc << s << ci << " found: " << esc << vpar[vit] << "\n";
     exit(EXIT_FAILURE);
   };
-  auto exit_on_number_error = [] (size_t s) {
-    std::cerr << "\33[1;31m[ ARGS-READER::NUMBER_ERROR ]\33[m insufficient given:" << s << "\n";
+  auto exit_on_number_error = [ca=alert,ci=info,esc] () {
+    std::cerr << ca << "[ ARGS-READER::NUMBER_ERROR ] " << esc << " insufficient number of arguments" << "\n";
     exit(EXIT_FAILURE);
   };
   ignore_unused(exit_on_conversion_error);
   ignore_unused(exit_on_number_error);
 
   if (vpar.size() > vit) {
-         if constexpr (std::is_same<T, bool>       ::value) vv = vpar[vit] == "true" or (vpar[vit])[0] == '-' ? true : false;
-    else if ((vpar[vit])[0] == '-') exit_on_number_error(vpar.size());
-    else if constexpr (std::is_same<T, int16_t>    ::value) { try { vv = stoi (vpar[vit]); } catch(...) { exit_on_conversion_error("int16_t") ; } }
-    else if constexpr (std::is_same<T, int32_t>    ::value) { try { vv = stoi (vpar[vit]); } catch(...) { exit_on_conversion_error("int32_t") ; } }
-    else if constexpr (std::is_same<T, int64_t>    ::value) { try { vv = stol (vpar[vit]); } catch(...) { exit_on_conversion_error("int64_t") ; } }
-    else if constexpr (std::is_same<T, uint16_t>   ::value) { try { vv = stoul(vpar[vit]); } catch(...) { exit_on_conversion_error("uint16_t"); } }
-    else if constexpr (std::is_same<T, uint32_t>   ::value) { try { vv = stoul(vpar[vit]); } catch(...) { exit_on_conversion_error("uint32_t"); } }
-    else if constexpr (std::is_same<T, uint64_t>   ::value) { try { vv = stoul(vpar[vit]); } catch(...) { exit_on_conversion_error("uint64_t"); } }
-    else if constexpr (std::is_same<T, float>      ::value) { try { vv = stof (vpar[vit]); } catch(...) { exit_on_conversion_error("float")   ; } }
-    else if constexpr (std::is_same<T, double>     ::value) { try { vv = stod (vpar[vit]); } catch(...) { exit_on_conversion_error("double")  ; } }
-    else if constexpr (std::is_same<T, std::string>::value) { try { vv = vpar[vit];        } catch(...) { exit_on_conversion_error("string")  ; } }
-    else if constexpr (std::is_same<T, bool>       ::value) { try { vv = vpar[vit] == "true" or (vpar[vit])[0] == '-' ? true : false; }
-                                                                                             catch(...) { exit_on_conversion_error("bool or void"); } }
-    else exit_on_number_error(vpar.size());
+    auto & cp = vpar[vit];
+    if constexpr (std::is_same<T, bool>::value) {
+      try { vv = cp == "true" or (cp)[0] == '-' ? true : false; }
+      catch(...) { exit_on_conversion_error("bool or void"); }
+    }
+    else if ((cp)[0] == '-') exit_on_number_error();
+    else if constexpr (std::is_same<T, std::string>::value) { try { vv = cp; } catch(...) { exit_on_conversion_error("string"); } }
+    else if constexpr (std::is_same<T, char>       ::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
+    else { try { vv = boost::lexical_cast<T>(cp); } catch(...) { exit_on_conversion_error("numeric "+(std::string)(typeid(T).name())); } }
   }
   else if constexpr (std::is_same<T, bool>::value) vv = "true";
-  else exit_on_number_error(vpar.size());
+  else exit_on_number_error();
   vit++;
 }
 

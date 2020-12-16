@@ -14,6 +14,7 @@ int main (int argc, char * argv[]) {
     std::cout << "\t--nums <4x-double>\n";
     std::cout << "\t--arb <int>...\n";
     std::cout << "\t--mix <double double string>\n\n";
+    std::cout << "\t-c <char>\n\n";
     return 1;
   };
 
@@ -56,6 +57,9 @@ int main (int argc, char * argv[]) {
   found = fetch_arg(argc, argv, "-d", b);
   if (found) std::cout << "direct: " << b << std::endl;
 
+  char cc;
+  found = fetch_arg(argc, argv, "-c", cc);
+  if (found) std::cout << "Char: " << cc << std::endl;
 
   return 0;
 }
