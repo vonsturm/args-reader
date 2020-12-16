@@ -2,11 +2,9 @@
 
 #include "args_reader.hpp"
 
-//using namespace args_reader;
-
 int main (int argc, char * argv[]) {
 
-  auto usage = [](){ 
+  auto usage = [](){
     std::cout << "\nUsage: ./example\n\n";
     std::cout << "Options:\n";
     std::cout << "\t-h (--help) <bool/void>\n";
@@ -33,7 +31,7 @@ int main (int argc, char * argv[]) {
   bool found = fetch_arg(args, "-n",     name) or
                fetch_arg(args, "--name", name);
   if (found) std::cout << "Hello " << name << std::endl;
-  
+
   // read into vector with fixed number of elements
   std::vector<double> a(4,0);
   found = fetch_arg(args, "--nums", a);
