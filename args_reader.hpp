@@ -70,26 +70,22 @@ void check_convert_and_assign(T & vv) {
   auto exit_on_conversion_error = [ca=alert,ci=info,esc] (std::string s) {
     std::cerr << ca << "[ ARGS-READER::CONVERSION_ERROR ] " << esc << ci << "expected: " << esc << s << ci << " found: " << esc << vpar[vit] << "\n";
     exit(EXIT_FAILURE);
-  };
+  }; ignore_unused(exit_on_conversion_error);
   auto exit_on_number_error = [ca=alert,ci=info,esc] () {
     std::cerr << ca << "[ ARGS-READER::NUMBER_ERROR ] " << esc << " insufficient number of arguments" << "\n";
     exit(EXIT_FAILURE);
-  };
-  ignore_unused(exit_on_conversion_error);
-  ignore_unused(exit_on_number_error);
+  }; ignore_unused(exit_on_number_error);
 
   if (vpar.size() > vit) {
     auto & cp = vpar[vit];
-    if constexpr (std::is_same<T, bool>::value) {
-      try { vv = cp == "true" or (cp)[0] == '-' ? true : false; }
-      catch(...) { exit_on_conversion_error("bool or void"); }
-    }
-    else if ((cp)[0] == '-') exit_on_number_error();
-    else if constexpr (std::is_same<T, std::string>::value) { try { vv = cp; } catch(...) { exit_on_conversion_error("string"); } }
-    else if constexpr (std::is_same<T, char>       ::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
+    if (std::is_same<T, bool>::value) { try { vv = cp == "true" or cp[0] == '-' ? true : false; } 
+                                        catch(...) { exit_on_conversion_error("bool or void"); } }
+    else if (cp[0] == '-') exit_on_number_error();
+    else if (std::is_same<T, std::string>::value) { try { vv = cp; } catch(...) { exit_on_conversion_error("string"); } }
+    else if (std::is_same<T, char>       ::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
     else { try { vv = boost::lexical_cast<T>(cp); } catch(...) { exit_on_conversion_error("numeric "+(std::string)(typeid(T).name())); } }
   }
-  else if constexpr (std::is_same<T, bool>::value) vv = "true";
+  else if (std::is_same<T, bool>::value) vv = "true";
   else exit_on_number_error();
   vit++;
 }
