@@ -2,7 +2,7 @@
 
 Simple argument reader that checks a vector for a given identifier and
 the type(s) of the variable(s) passed to it. Reads the argument(s) and
-does the type conversion from string. Use with `-std=c++17`. 
+does the type conversion from string. Use with `-std=c++17`.
 
 maintainer  
 
@@ -58,7 +58,3 @@ Compile it with
 ```
 g++ -std=c++17 example.cpp -o example
 ```
-
-## TODO
-
-  - use `boost::lexical_cast<T>`
