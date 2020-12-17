@@ -58,11 +58,11 @@
 std::vector<std::string> vpar(0); uint16_t vit = 0;
 
 template <class T>
-void ignore_unused(T&) {} 
+void ignore_unused(T&) {}
 
 template<typename T>
 void check_convert_and_assign(T & vv) {
-  
+
   std::string alert = "\e[1;31m";
   std::string info  = "\e[38;5;208m";
   std::string esc   = "\e[0m";
@@ -78,14 +78,19 @@ void check_convert_and_assign(T & vv) {
 
   if (vpar.size() > vit) {
     auto & cp = vpar[vit];
-    if (std::is_same<T, bool>::value) { try { vv = cp == "true" or cp[0] == '-' ? true : false; } 
-                                        catch(...) { exit_on_conversion_error("bool or void"); } }
-    else if (cp[0] == '-') exit_on_number_error();
-    else if (std::is_same<T, std::string>::value) { try { vv = cp; } catch(...) { exit_on_conversion_error("string"); } }
-    else if (std::is_same<T, char>       ::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
-    else { try { vv = boost::lexical_cast<T>(cp); } catch(...) { exit_on_conversion_error("numeric "+(std::string)(typeid(T).name())); } }
+    if (std::is_same<T, bool>::value) {
+      try { vv = cp == "true" or cp[0] == '-' ? true : false; }
+      catch(...) { exit_on_conversion_error("bool or void"); }
+    }
+    else if           (cp[0] == '-')                        exit_on_number_error();
+    else if constexpr (std::is_same<T, std::string>::value) vv = cp;
+    else if           (std::is_same<T, char>       ::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
+    else { 
+      try { vv = boost::lexical_cast<T>(cp); }
+      catch(...) { exit_on_conversion_error("numeric "+(std::string)(typeid(T).name())); }
+    }
   }
-  else if (std::is_same<T, bool>::value) vv = "true";
+  else if (std::is_same<T, bool>::value) vv = true;
   else exit_on_number_error();
   vit++;
 }
@@ -108,7 +113,7 @@ bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T&
 template<typename T>
 bool fetch_arg(const std::vector<std::string> & args, std::string identifier, std::vector<T> & var) {
   auto result = find(args.begin(), args.end(), identifier);
-  
+
   if (result != args.end()) {
     vpar.resize(0); vit = 0;
     if (var.size() == 0) {
