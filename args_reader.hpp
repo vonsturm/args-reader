@@ -51,6 +51,12 @@
 //
 // ============================================================================
 
+#ifdef __GNUC__
+#if __GNUC__ < 7
+#error GNU compiler version 7 or higher required
+#endif
+#endif
+
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 
