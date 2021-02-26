@@ -50,10 +50,13 @@
 //    returns `true` if <identifier> was found, `false` otherwise
 //
 // ============================================================================
+// TODO:
+// - compatibility with gcc-6 series broken due to `if constexpr` (fixable?)
+// ============================================================================
 
 #ifdef __GNUC__
-#if __GNUC__ < 7
-#error GNU compiler version 7 or higher required
+#if __GNUC__ < 5
+#error GNU compiler version 5 or higher required
 #endif
 #endif
 
@@ -88,9 +91,8 @@ void check_convert_and_assign(T & vv) {
       try { vv = cp == "true" or cp[0] == '-' ? true : false; }
       catch(...) { exit_on_conversion_error("bool or void"); }
     }
-    else if           (cp[0] == '-')                        exit_on_number_error();
-    else if constexpr (std::is_same<T, std::string>::value) vv = cp;
-    else if           (std::is_same<T, char>       ::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
+    else if (cp[0] == '-') exit_on_number_error();
+    else if (std::is_same<T, char>::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
     else { 
       try { vv = boost::lexical_cast<T>(cp); }
       catch(...) { exit_on_conversion_error("numeric "+(std::string)(typeid(T).name())); }
