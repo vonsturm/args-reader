@@ -51,7 +51,7 @@
 //
 // ============================================================================
 // TODO:
-// - compatibility with gcc-6 series broken due to `if constexpr` (fixable?)
+// - add an appropriate namespace
 // ============================================================================
 
 #ifdef __GNUC__
