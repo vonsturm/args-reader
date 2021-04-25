@@ -51,11 +51,11 @@
 //
 // ============================================================================
 // TODO:
-// - add an appropriate namespace
 // ============================================================================
 
 #ifndef ARGS_READER_H
 #define ARGS_READER_H
+
 #ifdef __GNUC__
 #if __GNUC__ < 5
 #error GNU compiler version 5 or higher required
@@ -65,93 +65,97 @@
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 
-// global variables
-std::vector<std::string> vpar(0); uint16_t vit = 0;
+namespace args_reader {
+  
+  // global variables
+  std::vector<std::string> vpar(0); uint16_t vit = 0;
 
-template <class T>
-void ignore_unused(T&) {}
+  template <class T>
+  void ignore_unused(T&) {}
 
-template<typename T>
-void check_convert_and_assign(T & vv) {
+  template<typename T>
+  void check_convert_and_assign(T & vv) {
 
-  std::string alert = "\e[1;31m";
-  std::string info  = "\e[38;5;208m";
-  std::string esc   = "\e[0m";
+    std::string alert = "\e[1;31m";
+    std::string info  = "\e[38;5;208m";
+    std::string esc   = "\e[0m";
 
-  auto exit_on_conversion_error = [ca=alert,ci=info,esc] (std::string s) {
-    std::cerr << ca << "[ ARGS-READER::CONVERSION_ERROR ] " << esc << ci << "expected: " << esc << s << ci << " found: " << esc << vpar[vit] << "\n";
-    exit(EXIT_FAILURE);
-  }; ignore_unused(exit_on_conversion_error);
-  auto exit_on_number_error = [ca=alert,ci=info,esc] () {
-    std::cerr << ca << "[ ARGS-READER::NUMBER_ERROR ] " << esc << " insufficient number of arguments" << "\n";
-    exit(EXIT_FAILURE);
-  }; ignore_unused(exit_on_number_error);
+    auto exit_on_conversion_error = [ca=alert,ci=info,esc] (std::string s) {
+      std::cerr << ca << "[ ARGS-READER::CONVERSION_ERROR ] " << esc << ci << "expected: " << esc << s << ci << " found: " << esc << vpar[vit] << "\n";
+      exit(EXIT_FAILURE);
+    }; ignore_unused(exit_on_conversion_error);
+    auto exit_on_number_error = [ca=alert,ci=info,esc] () {
+      std::cerr << ca << "[ ARGS-READER::NUMBER_ERROR ] " << esc << " insufficient number of arguments" << "\n";
+      exit(EXIT_FAILURE);
+    }; ignore_unused(exit_on_number_error);
 
-  if (vpar.size() > vit) {
-    auto & cp = vpar[vit];
-    if (std::is_same<T, bool>::value) {
-      try { vv = cp == "true" or cp[0] == '-' ? true : false; }
-      catch(...) { exit_on_conversion_error("bool or void"); }
+    if (vpar.size() > vit) {
+      auto & cp = vpar[vit];
+      if (std::is_same<T, bool>::value) {
+        try { vv = cp == "true" or cp[0] == '-' ? true : false; }
+        catch(...) { exit_on_conversion_error("bool or void"); }
+      }
+      else if (cp[0] == '-') exit_on_number_error();
+      else if (std::is_same<T, char>::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
+      else { 
+        try { vv = boost::lexical_cast<T>(cp); }
+        catch(...) { exit_on_conversion_error("numeric "+(std::string)(typeid(T).name())); }
+      }
     }
-    else if (cp[0] == '-') exit_on_number_error();
-    else if (std::is_same<T, char>::value) { if (cp.size() == 1) vv = cp[0]; else exit_on_conversion_error("char"); }
-    else { 
-      try { vv = boost::lexical_cast<T>(cp); }
-      catch(...) { exit_on_conversion_error("numeric "+(std::string)(typeid(T).name())); }
-    }
+    else if (std::is_same<T, bool>::value) vv = true;
+    else exit_on_number_error();
+    vit++;
   }
-  else if (std::is_same<T, bool>::value) vv = true;
-  else exit_on_number_error();
-  vit++;
-}
 
-template<typename... T>
-bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T&... var) {
-  auto result = find(args.begin(), args.end(), identifier);
+  template<typename... T>
+  bool fetch_arg(const std::vector<std::string> & args, std::string identifier, T&... var) {
+    auto result = find(args.begin(), args.end(), identifier);
 
-  if (result != args.end()) { // argument not found
-    vpar.resize(0); vit = 0;
-    if ((uint64_t)abs(args.end()-result) > sizeof...(var)) { // only copy necessary stuff and only if there is stuff to copy
-      std::copy(result + 1, result + sizeof...(var) + 1, std::back_inserter(vpar));
+    if (result != args.end()) { // argument not found
+      vpar.resize(0); vit = 0;
+      if ((uint64_t)abs(args.end()-result) > sizeof...(var)) { // only copy necessary stuff and only if there is stuff to copy
+        std::copy(result + 1, result + sizeof...(var) + 1, std::back_inserter(vpar));
+      }
+      (check_convert_and_assign(var),...);
+      return true;
     }
-    (check_convert_and_assign(var),...);
-    return true;
+    return false;
   }
-  return false;
-}
 
-template<typename T>
-bool fetch_arg(const std::vector<std::string> & args, std::string identifier, std::vector<T> & var) {
-  auto result = find(args.begin(), args.end(), identifier);
+  template<typename T>
+  bool fetch_arg(const std::vector<std::string> & args, std::string identifier, std::vector<T> & var) {
+    auto result = find(args.begin(), args.end(), identifier);
 
-  if (result != args.end()) {
-    vpar.resize(0); vit = 0;
-    if (var.size() == 0) {
-      auto result1 = std::find_if(result + 1, args.end(), [](const std::string &s) { return s[0] == '-'; });
-      var.resize(result1-result-1);
+    if (result != args.end()) {
+      vpar.resize(0); vit = 0;
+      if (var.size() == 0) {
+        auto result1 = std::find_if(result + 1, args.end(), [](const std::string &s) { return s[0] == '-'; });
+        var.resize(result1-result-1);
+      }
+      if ((uint64_t)abs(args.end()-result) > var.size()) {
+        std::copy(result + 1, result + var.size() + 1, std::back_inserter(vpar));
+      }
+      for (auto & v : var) check_convert_and_assign(v);
+      return true;
     }
-    if ((uint64_t)abs(args.end()-result) > var.size()) {
-      std::copy(result + 1, result + var.size() + 1, std::back_inserter(vpar));
-    }
-    for (auto & v : var) check_convert_and_assign(v);
-    return true;
+    return false;
   }
-  return false;
+
+  template<typename... T>
+  bool fetch_arg(int const argc, char * const argv[], std::string identifier, T&... var) {
+    std::vector<std::string> args(argc);
+    std::copy(argv, argv+argc, args.begin());
+
+    return fetch_arg(args, identifier, var...);
+  }
+
+  template<typename T>
+  bool fetch_arg(int const argc, char * const argv[], std::string identifier, std::vector<T> & var) {
+    std::vector<std::string> args(argc);
+    std::copy(argv, argv+argc, args.begin());
+
+    return fetch_arg(args, identifier, var);
+  }
 }
 
-template<typename... T>
-bool fetch_arg(int const argc, char * const argv[], std::string identifier, T&... var) {
-  std::vector<std::string> args(argc);
-  std::copy(argv, argv+argc, args.begin());
-
-  return fetch_arg(args, identifier, var...);
-}
-
-template<typename T>
-bool fetch_arg(int const argc, char * const argv[], std::string identifier, std::vector<T> & var) {
-  std::vector<std::string> args(argc);
-  std::copy(argv, argv+argc, args.begin());
-
-  return fetch_arg(args, identifier, var);
-}
 #endif
