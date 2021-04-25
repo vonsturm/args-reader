@@ -8,6 +8,14 @@ maintainer
 
 Katharina von Sturm - katharinavonsturm@gmail.com  
 
+## Prerequisits
+
+You need to install the boost library e.g. Ubuntu
+
+```bash
+sudo apt install libboost-dev
+```
+
 ## Usage
 
 Pass arguments to the `args-reader` together with an identifier and
