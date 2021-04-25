@@ -54,6 +54,8 @@
 // - add an appropriate namespace
 // ============================================================================
 
+#ifndef ARGS_READER_H
+#define ARGS_READER_H
 #ifdef __GNUC__
 #if __GNUC__ < 5
 #error GNU compiler version 5 or higher required
@@ -152,3 +154,4 @@ bool fetch_arg(int const argc, char * const argv[], std::string identifier, std:
 
   return fetch_arg(args, identifier, var);
 }
+#endif
