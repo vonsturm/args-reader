@@ -25,6 +25,8 @@ identifier was found `false` otherwise.
 ```c++
 #include "args_reader.hpp"
 
+using namespace args_reader;
+
 int main (int argc, char * argv[]) {
 
   std::vector<std::string> args(argc);
@@ -41,7 +43,7 @@ int main (int argc, char * argv[]) {
   bool found = fetch_arg(args, "-i",      index) or
                fetch_arg(args, "--index", index);
 
-  // you can read a fixed number of same-type arguments into a vector 
+  // you can read a fixed number of same-type arguments into a vector
   vector<int> v(5,0);
   fetch_arg(args, "-n", v);
 
